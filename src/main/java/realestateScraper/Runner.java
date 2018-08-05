@@ -25,6 +25,6 @@ public class Runner {
             System.out.println("complete." );
         }
         FileExporter fileExporter = new GoogleCalendarCSVExporter();
-        fileExporter.export("C:\\Users\\justi\\Desktop\\Google_Calendar_Auction_Import", allAuctions);
+        fileExporter.export(args[0], allAuctions);
     }
 }
