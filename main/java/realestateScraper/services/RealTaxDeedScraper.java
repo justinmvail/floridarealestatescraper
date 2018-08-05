@@ -25,6 +25,7 @@ import realestateScraper.DomainObjects.County;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -128,7 +129,7 @@ public class RealTaxDeedScraper implements TaxAuctionService{
             @Override
             public WebResponse getResponse(WebRequest webRequest) throws IOException {
                 if (webRequest.getUrl().getPath().endsWith("jquery-1.6.1.min.js")) {
-                    String jQuery = FileUtils.readFileToString(new File("src/main/resources/jquery-1.6.1.js"));
+                    String jQuery = FileUtils.readFileToString(new File(this.getClass().getResource("/jquery-1.6.1.js").getPath()));
                     return createWebResponse(webRequest, jQuery, "application/javascript");
                 }
                 return super.getResponse(webRequest);
