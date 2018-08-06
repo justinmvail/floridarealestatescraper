@@ -9,12 +9,7 @@ import com.gargoylesoftware.htmlunit.NicelyResynchronizingAjaxController;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.WebRequest;
 import com.gargoylesoftware.htmlunit.WebResponse;
-import com.gargoylesoftware.htmlunit.html.HtmlBold;
-import com.gargoylesoftware.htmlunit.html.HtmlElement;
-import com.gargoylesoftware.htmlunit.html.HtmlForm;
-import com.gargoylesoftware.htmlunit.html.HtmlOption;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.html.HtmlSelect;
+import com.gargoylesoftware.htmlunit.html.*;
 import com.gargoylesoftware.htmlunit.util.FalsifyingWebConnection;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.LogFactory;
@@ -87,8 +82,41 @@ public class RealTaxDeedScraper implements TaxAuctionService{
     }
 
     @Override
-    public List<AuctionListing> getAuctionListings(Auction auction){
-        return null;
+    public List<AuctionListing> getAuctionListings(Auction auction) throws IOException {
+        WebClient webClient = getRealTaxDeedWebClient(useFrameworkLogging);
+        HtmlPage htmlPage = webClient.getPage(auction.getUrl());
+        HtmlDivision upcomingListingsDivision = (HtmlDivision) htmlPage.getElementById("Area_W");
+        List<HtmlDivision> auctionListingDivs = upcomingListingsDivision.getByXPath("//div[contains(@class, 'AUCTION_DETAILS')]");
+        List<AuctionListing> listings = new ArrayList<>();
+        for(HtmlDivision div : auctionListingDivs){
+            DomNodeList<DomNode> domNodeList = div.getFirstChild().getFirstChild().getChildNodes();
+            AuctionListing auctionListing = new AuctionListing();
+            for(DomNode domNode : domNodeList){
+                if(!(domNode instanceof HtmlTableRow)) continue;
+                HtmlTableRow htmlTableRow = (HtmlTableRow)domNode;
+                List<HtmlTableCell> cells = htmlTableRow.getCells();
+                String cellLabel = cells.get(0).asText();
+                if(cellLabel.equals("Auction Type:")){
+                    auctionListing.setAuctionType(AuctionType.valueOf(cells.get(1).asText().replace(" ", "")));
+                }else if(cellLabel.equals("Case #:")){
+                    auctionListing.setCaseNumber(cells.get(1).asText());
+                }else if(cellLabel.equals("Certificate #:")){
+                    auctionListing.setCertificateNumber(cells.get(1).asText());
+                }else if(cellLabel.equals("Opening Bid:")){
+                    auctionListing.setOpeningBid(Float.parseFloat(cells.get(1).asText().replace("$","").replace(",","")));
+                }else if(cellLabel.equals("Parcel ID:")){
+                    auctionListing.setParcelID(cells.get(1).asText());
+                }else if(cellLabel.equals("Property Address:")) {
+                    auctionListing.setPropertyAddress(cells.get(1).asText());
+                }else if(cellLabel.equals("")){
+                    auctionListing.setPropertyAddress(auctionListing.getPropertyAddress() + " " + cells.get(1).asText());
+                }else if(cellLabel.equals("Assessed Value:")) {
+                    auctionListing.setAssessedValue(Float.parseFloat(cells.get(1).asText().replace("$","").replace(",","")));
+                }
+            }
+            listings.add(auctionListing);
+        }
+        return  listings;
     }
 
     private void selectMonth(HtmlSelect monthSelector, List<HtmlOption> monthYearOptions, LocalDate date){

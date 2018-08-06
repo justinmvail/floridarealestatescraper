@@ -26,11 +26,10 @@ public class GoogleCalendarCSVExporter implements FileExporter {
                 "Private"
         ));
         for(Auction auction : auctionList) {
-            LocalTime adjustedTime = SimpleTimeZoneRectifier.rectifyTimeZone(auction.getTime(), auction.getCounty(), TimeZone.ET);
             csvPrinter.printRecord(
                     auction.getCounty().getCountyName()+" Auction",
                     auction.getDate(),
-                    adjustedTime,
+                    auction.getTime(),
                     false,
                     auction.getUrl(),
                     true

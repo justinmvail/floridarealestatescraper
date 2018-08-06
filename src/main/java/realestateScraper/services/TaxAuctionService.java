@@ -20,5 +20,5 @@ public interface TaxAuctionService {
 
     List<Auction> getAllAuctionDatesForRange(AuctionType auctionType, County county, LocalDate inclusiveStartingDate, LocalDate exclusiveEndingDate);
 
-    List<AuctionListing> getAuctionListings(Auction auction);
+    List<AuctionListing> getAuctionListings(Auction auction) throws IOException;
 }

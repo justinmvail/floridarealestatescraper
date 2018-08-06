@@ -1,7 +1,8 @@
 package realestateScraper.DomainObjects;
 
 public enum AuctionType {
-    TAX_DEED("Tax Deed");
+    TAXDEED("Tax Deed"),
+    FORECLOSURE("Foreclosure");
 
     private final String displayName;
 
