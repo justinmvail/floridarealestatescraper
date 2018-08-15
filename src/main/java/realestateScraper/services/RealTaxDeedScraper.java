@@ -5,8 +5,6 @@ import com.gargoylesoftware.css.parser.CSSException;
 import com.gargoylesoftware.css.parser.CSSParseException;
 import com.gargoylesoftware.htmlunit.AjaxController;
 import com.gargoylesoftware.htmlunit.BrowserVersion;
-import com.gargoylesoftware.htmlunit.IncorrectnessListener;
-import com.gargoylesoftware.htmlunit.NicelyResynchronizingAjaxController;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.WebRequest;
 import com.gargoylesoftware.htmlunit.WebResponse;
@@ -15,7 +13,6 @@ import com.gargoylesoftware.htmlunit.util.FalsifyingWebConnection;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.LogFactory;
-import org.eclipse.jetty.util.StringUtil;
 import realestateScraper.DomainObjects.Auction;
 import realestateScraper.DomainObjects.AuctionListing;
 import realestateScraper.DomainObjects.AuctionType;
@@ -33,10 +30,6 @@ import java.util.logging.Level;
 public class RealTaxDeedScraper implements TaxAuctionService{
 
     private final BrowserVersion browserVersion = BrowserVersion.CHROME;
-    private final String calendarUrlAppension = "/index.cfm?zaction=USER&zmethod=CALENDAR";
-    private final String auctionUrlAppension = "/index.cfm?zaction=AUCTION&Zmethod=PREVIEW&AUCTIONDATE=";
-    private final String monthSelectorXpath = "//*[@id=\"selCalDate\"]";
-    private final String auctionDateXpathWithAuctionTypePlaceHolder = "//*[text()='%s']";
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a");
     private final boolean useFrameworkLogging;
@@ -48,12 +41,15 @@ public class RealTaxDeedScraper implements TaxAuctionService{
     @Override
     public List<Auction> getAllAuctionDatesByMonth(AuctionType auctionType, County county, LocalDate startingDate) throws IOException, InterruptedException {
         WebClient webClient = getRealTaxDeedWebClient(useFrameworkLogging);
-        HtmlPage calendarPage = webClient.getPage(county.getUrl()+calendarUrlAppension);
+        String calendarUrlAppension = "/index.cfm?zaction=USER&zmethod=CALENDAR";
+        HtmlPage calendarPage = webClient.getPage(county.getUrl()+ calendarUrlAppension);
+        String monthSelectorXpath = "//*[@id=\"selCalDate\"]";
         HtmlSelect monthSelector = calendarPage.getFirstByXPath(monthSelectorXpath);
         List<HtmlOption> monthYearOptions = monthSelector.getOptions();
         selectMonth(monthSelector, monthYearOptions, startingDate);
         HtmlForm form = calendarPage.getFormByName("monthChoose");
         calendarPage = addButtonToFormAndSubmit(calendarPage, form);
+        String auctionDateXpathWithAuctionTypePlaceHolder = "//*[text()='%s']";
         List<HtmlElement> taxAuctionDates = calendarPage.getByXPath(String.format(auctionDateXpathWithAuctionTypePlaceHolder, auctionType.getDisplayName()));
         taxAuctionDates.removeIf((HtmlElement auctionDate) -> !(auctionDate instanceof HtmlBold));
         return getAuctionsfromHtmlElements(taxAuctionDates, auctionType, county);
@@ -91,34 +87,40 @@ public class RealTaxDeedScraper implements TaxAuctionService{
 
     @Override
     public List<AuctionListing> getAuctionListings(Auction auction) throws IOException {
-        List<AuctionListing> allUpcomingAuctionListings = new ArrayList<>();
         WebClient webClient = getRealTaxDeedWebClient(useFrameworkLogging);
-        HtmlPage htmlPage = webClient.getPage(auction.getUrl());
-
-        //Get information to see if we should keep going
-        List<HtmlDivision> division = htmlPage.getByXPath("//div[contains(@class, 'Head_W')]");
-        String divisionString = division.get(0).asText();
-        if(divisionString.equals("1\r\n1")){
-            return allUpcomingAuctionListings;
-        }
-        int currentPage = Integer.parseInt(divisionString.substring(25, 26));
+        HtmlPage auctionListingPage = webClient.getPage(auction.getUrl());
+        List<HtmlDivision> auctionListingDivMatches = auctionListingPage.getByXPath("//div[contains(@class, 'Head_W')]");
+        String divisionString = auctionListingDivMatches.get(0).asText();
+        //The division string is equal to 1\r\n1 when there are no upcoming auctions - return the empty list.
+        if(divisionString.equals("1\r\n1")) return new ArrayList<>();
         int totalPages = Integer.parseInt(divisionString.substring(30, 31));
+        return loopOverPagesOfAuctionListings(totalPages, auctionListingPage);
+    }
 
+    private List<AuctionListing> loopOverPagesOfAuctionListings(int totalPages, HtmlPage auctionListingPage) throws IOException {
+        List<AuctionListing> allUpcomingAuctionListings = new ArrayList<>();
+        int currentPage = 1;
         while(currentPage<=totalPages) {
-            HtmlDivision upcomingListingsDivision = (HtmlDivision) htmlPage.getElementById("Area_W");
+            HtmlDivision upcomingListingsDivision = (HtmlDivision) auctionListingPage.getElementById("Area_W");
             List<HtmlDivision> auctionListingDivs = upcomingListingsDivision.getByXPath("//div[contains(@class, 'AUCTION_DETAILS')]");
+            ensureAuctionPageIsDoneLoading(auctionListingDivs);
             allUpcomingAuctionListings.addAll(scrapeUpcomingAuctionListings(auctionListingDivs));
-            //click next page
-            HtmlSpan nextPageSpan = (HtmlSpan) htmlPage.getByXPath("//*[@id=\"BID_WINDOW_CONTAINER\"]/div[3]/div[3]/span[3]").get(0);
-            nextPageSpan.click();
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            HtmlSpan nextPageSpan = (HtmlSpan) auctionListingPage.getByXPath("//*[@id=\"BID_WINDOW_CONTAINER\"]/div[3]/div[3]/span[3]").get(0);
+            auctionListingPage = nextPageSpan.click();
             currentPage++;
         }
         return allUpcomingAuctionListings;
+    }
+
+    private void ensureAuctionPageIsDoneLoading(List<HtmlDivision> htmlDivisions){
+        //This method continually checks to see if the page is done loading, once it is, it returns
+        while(true){
+            boolean allDivsLoaded = true;
+            for(HtmlDivision htmlDivision : htmlDivisions){
+                if(htmlDivision.getParentNode().getFirstChild().asText().equals("")) allDivsLoaded = false;
+            }
+            if(allDivsLoaded) return;
+        }
     }
 
     private List<AuctionListing> scrapeUpcomingAuctionListings(List<HtmlDivision> auctionListingDivs) {
@@ -196,7 +198,8 @@ public class RealTaxDeedScraper implements TaxAuctionService{
             String[] lines = auctionDate.getParentNode().asText().split("\\r?\\n");
             LocalDate date = LocalDate.parse(auctionDate.getParentNode().getParentNode().getAttributes().getNamedItem("dayid").getNodeValue(), dateFormatter);
             LocalTime time = LocalTime.parse(lines[2].trim().substring(0,8), timeFormatter);
-            String strUrl = county.getUrl()+auctionUrlAppension+date.format(dateFormatter);
+            String auctionUrlFragment = "/index.cfm?zaction=AUCTION&Zmethod=PREVIEW&AUCTIONDATE=";
+            String strUrl = county.getUrl()+ auctionUrlFragment +date.format(dateFormatter);
             Auction auction =  new Auction(auctionType, county, date, time, strUrl);
             auctions.add(auction);
         }
@@ -205,7 +208,6 @@ public class RealTaxDeedScraper implements TaxAuctionService{
 
     private WebClient getRealTaxDeedWebClient(boolean useLogging){
         final WebClient webClient = new WebClient(browserVersion);
-//        webClient.waitForBackgroundJavaScript(10000);
         webClient.setWebConnection(new FalsifyingWebConnection(webClient) {
             @Override
             public WebResponse getResponse(WebRequest webRequest) throws IOException {
@@ -216,7 +218,8 @@ public class RealTaxDeedScraper implements TaxAuctionService{
                 return super.getResponse(webRequest);
             }
         });
-//        webClient.setAjaxController(new NicelyResynchronizingAjaxController());
+        //TODO: Is the following really necessary? can I this use NicelyResynchronizingAjaxController instead?
+        //This should make all AJAX calls completely synchronous
         webClient.setAjaxController(new AjaxController(){
             @Override
             public boolean processSynchron(HtmlPage page, WebRequest request, boolean async){
@@ -228,24 +231,21 @@ public class RealTaxDeedScraper implements TaxAuctionService{
             java.util.logging.Logger.getLogger("com.gargoylesoftware.htmlunit").setLevel(Level.OFF);
             java.util.logging.Logger.getLogger("org.apache.commons.httpclient").setLevel(Level.OFF);
 
-            webClient.setIncorrectnessListener(new IncorrectnessListener() {
-                @Override
-                public void notify(String arg0, Object arg1) {
-                    // TODO Auto-generated method stub
-                }
+            webClient.setIncorrectnessListener((arg0, arg1) -> {
+                // intentionally left blank to override default functionality with nothing
             });
             webClient.setCssErrorHandler(new CSSErrorHandler() {
                 @Override
                 public void warning(CSSParseException exception) throws CSSException {
-                    // TODO Auto-generated method stub
+                    // intentionally left blank to override default functionality with nothing
                 }
                 @Override
                 public void fatalError(CSSParseException exception) throws CSSException {
-                    // TODO Auto-generated method stub
+                    // intentionally left blank to override default functionality with nothing
                 }
                 @Override
                 public void error(CSSParseException exception) throws CSSException {
-                    // TODO Auto-generated method stub
+                    // intentionally left blank to override default functionality with nothing
                 }
             });
         }
