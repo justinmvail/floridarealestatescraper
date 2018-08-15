@@ -3,6 +3,7 @@ package realestateScraper.services;
 import com.gargoylesoftware.css.parser.CSSErrorHandler;
 import com.gargoylesoftware.css.parser.CSSException;
 import com.gargoylesoftware.css.parser.CSSParseException;
+import com.gargoylesoftware.htmlunit.AjaxController;
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.IncorrectnessListener;
 import com.gargoylesoftware.htmlunit.NicelyResynchronizingAjaxController;
@@ -12,7 +13,9 @@ import com.gargoylesoftware.htmlunit.WebResponse;
 import com.gargoylesoftware.htmlunit.html.*;
 import com.gargoylesoftware.htmlunit.util.FalsifyingWebConnection;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.LogFactory;
+import org.eclipse.jetty.util.StringUtil;
 import realestateScraper.DomainObjects.Auction;
 import realestateScraper.DomainObjects.AuctionListing;
 import realestateScraper.DomainObjects.AuctionType;
@@ -20,7 +23,6 @@ import realestateScraper.DomainObjects.County;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -51,7 +53,7 @@ public class RealTaxDeedScraper implements TaxAuctionService{
         List<HtmlOption> monthYearOptions = monthSelector.getOptions();
         selectMonth(monthSelector, monthYearOptions, startingDate);
         HtmlForm form = calendarPage.getFormByName("monthChoose");
-        addButtonToFormAndSubmit(calendarPage, form);
+        calendarPage = addButtonToFormAndSubmit(calendarPage, form);
         List<HtmlElement> taxAuctionDates = calendarPage.getByXPath(String.format(auctionDateXpathWithAuctionTypePlaceHolder, auctionType.getDisplayName()));
         taxAuctionDates.removeIf((HtmlElement auctionDate) -> !(auctionDate instanceof HtmlBold));
         return getAuctionsfromHtmlElements(taxAuctionDates, auctionType, county);
@@ -59,20 +61,26 @@ public class RealTaxDeedScraper implements TaxAuctionService{
 
     @Override
     public List<Auction> getAllAuctionDatesByWeek(AuctionType auctionType, County county, LocalDate startingDate) throws IOException, InterruptedException {
-        //Weeks are defined Sunday to Monday
+        //TODO: improve efficiency by not loading (an) entire month(s) for one week
         LocalDate endingDate = startingDate.plusDays(7);
         List<Auction> auctionList;
         auctionList = getAllAuctionDatesByMonth(auctionType, county, startingDate);
         if(!startingDate.getMonth().equals(endingDate.getMonth())){
             auctionList.addAll(getAllAuctionDatesByMonth(auctionType, county, endingDate));
         }
-
-        //TODO:filter out days not in week
+        auctionList.removeIf((Auction auction) -> (auction.getDate().isBefore(startingDate)||auction.getDate().isAfter(endingDate)));
         return auctionList;
     }
 
     @Override
-    public List<Auction> getAllAuctionDatesByDay(AuctionType auctionType, County county, LocalDate startingDate) {
+    public Auction getAuctionByDate(AuctionType auctionType, County county, LocalDate date) throws IOException, InterruptedException {
+        //TODO: improve efficiency by not loading an entire month for one day
+        List<Auction> auctionList = getAllAuctionDatesByMonth(auctionType, county, date);
+        for(Auction auction : auctionList){
+            if(auction.getDate().equals(date)){
+                return auction;
+            }
+        }
         return null;
     }
 
@@ -83,41 +91,84 @@ public class RealTaxDeedScraper implements TaxAuctionService{
 
     @Override
     public List<AuctionListing> getAuctionListings(Auction auction) throws IOException {
+        List<AuctionListing> allUpcomingAuctionListings = new ArrayList<>();
         WebClient webClient = getRealTaxDeedWebClient(useFrameworkLogging);
         HtmlPage htmlPage = webClient.getPage(auction.getUrl());
-        HtmlDivision upcomingListingsDivision = (HtmlDivision) htmlPage.getElementById("Area_W");
-        List<HtmlDivision> auctionListingDivs = upcomingListingsDivision.getByXPath("//div[contains(@class, 'AUCTION_DETAILS')]");
-        List<AuctionListing> listings = new ArrayList<>();
-        for(HtmlDivision div : auctionListingDivs){
-            if(div.getFirstChild()==null || div.getFirstChild().getFirstChild()==null || div.getFirstChild().getFirstChild().getChildNodes()==null) continue;
-            DomNodeList<DomNode> domNodeList = div.getFirstChild().getFirstChild().getChildNodes();
-            AuctionListing auctionListing = new AuctionListing();
-            for(DomNode domNode : domNodeList){
-                if(!(domNode instanceof HtmlTableRow)) continue;
-                HtmlTableRow htmlTableRow = (HtmlTableRow)domNode;
-                List<HtmlTableCell> cells = htmlTableRow.getCells();
-                String cellLabel = cells.get(0).asText();
-                if(cellLabel.equals("Auction Type:")){
-                    auctionListing.setAuctionType(AuctionType.valueOf(cells.get(1).asText().replace(" ", "")));
-                }else if(cellLabel.equals("Case #:")){
-                    auctionListing.setCaseNumber(cells.get(1).asText());
-                }else if(cellLabel.equals("Certificate #:")){
-                    auctionListing.setCertificateNumber(cells.get(1).asText());
-                }else if(cellLabel.equals("Opening Bid:")){
-                    auctionListing.setOpeningBid(Float.parseFloat(cells.get(1).asText().replace("$","").replace(",","")));
-                }else if(cellLabel.equals("Parcel ID:")){
-                    auctionListing.setParcelID(cells.get(1).asText());
-                }else if(cellLabel.equals("Property Address:")) {
-                    auctionListing.setPropertyAddress(cells.get(1).asText());
-                }else if(cellLabel.equals("")){
-                    auctionListing.setPropertyAddress(auctionListing.getPropertyAddress() + " " + cells.get(1).asText());
-                }else if(cellLabel.equals("Assessed Value:")) {
-                    auctionListing.setAssessedValue(Float.parseFloat(cells.get(1).asText().replace("$","").replace(",","")));
-                }
-            }
-            listings.add(auctionListing);
+
+        //Get information to see if we should keep going
+        List<HtmlDivision> division = htmlPage.getByXPath("//div[contains(@class, 'Head_W')]");
+        String divisionString = division.get(0).asText();
+        if(divisionString.equals("1\r\n1")){
+            return allUpcomingAuctionListings;
         }
-        return  listings;
+        int currentPage = Integer.parseInt(divisionString.substring(25, 26));
+        int totalPages = Integer.parseInt(divisionString.substring(30, 31));
+
+        while(currentPage<=totalPages) {
+            HtmlDivision upcomingListingsDivision = (HtmlDivision) htmlPage.getElementById("Area_W");
+            List<HtmlDivision> auctionListingDivs = upcomingListingsDivision.getByXPath("//div[contains(@class, 'AUCTION_DETAILS')]");
+            allUpcomingAuctionListings.addAll(scrapeUpcomingAuctionListings(auctionListingDivs));
+            //click next page
+            HtmlSpan nextPageSpan = (HtmlSpan) htmlPage.getByXPath("//*[@id=\"BID_WINDOW_CONTAINER\"]/div[3]/div[3]/span[3]").get(0);
+            nextPageSpan.click();
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            currentPage++;
+        }
+        return allUpcomingAuctionListings;
+    }
+
+    private List<AuctionListing> scrapeUpcomingAuctionListings(List<HtmlDivision> auctionListingDivs) {
+        List<AuctionListing> listings = new ArrayList<>();
+        for(HtmlDivision div : auctionListingDivs) {
+            String header = div.getParentNode().getFirstChild().asText();
+            if(!header.startsWith("Auction Starts")) {
+                //Get rid of rogue divs
+                if (div.getFirstChild() == null || div.getFirstChild().getFirstChild() == null || div.getFirstChild().getFirstChild().getChildNodes() == null)
+                    continue;
+                //if this value is too short to be a date, ignore it
+                if (header.length() < 10)
+                    continue;
+                //If this doesn't start with a number, ignore it.
+                if (!StringUtils.isNumeric(header.substring(0, 2)))
+                    continue;
+            }
+            DomNodeList<DomNode> domNodeList = div.getFirstChild().getFirstChild().getChildNodes();
+            listings.add(scrapeSingleAuctionListing(domNodeList));
+        }
+        return listings;
+    }
+
+    private AuctionListing scrapeSingleAuctionListing(DomNodeList<DomNode> domNodeList){
+        AuctionListing auctionListing = new AuctionListing();
+        for (DomNode domNode : domNodeList) {
+            //get rid of erroneous matches... we only want HtmlRows
+            if (!(domNode instanceof HtmlTableRow)) continue;
+            HtmlTableRow htmlTableRow = (HtmlTableRow) domNode;
+            List<HtmlTableCell> cells = htmlTableRow.getCells();
+            String cellLabel = cells.get(0).asText();
+            if (cellLabel.equals("Auction Type:")) {
+                auctionListing.setAuctionType(AuctionType.valueOf(cells.get(1).asText().replace(" ", "")));
+            } else if (cellLabel.equals("Case #:")) {
+                auctionListing.setCaseNumber(cells.get(1).asText());
+            } else if (cellLabel.equals("Certificate #:")) {
+                auctionListing.setCertificateNumber(cells.get(1).asText());
+            } else if (cellLabel.equals("Opening Bid:")) {
+                auctionListing.setOpeningBid(Float.parseFloat(cells.get(1).asText().replace("$", "").replace(",", "")));
+            } else if (cellLabel.equals("Parcel ID:")) {
+                auctionListing.setParcelID(cells.get(1).asText());
+            } else if (cellLabel.equals("Property Address:")) {
+                auctionListing.setPropertyAddress(cells.get(1).asText());
+            } else if (cellLabel.equals("")) {
+                auctionListing.setPropertyAddress(auctionListing.getPropertyAddress() + " " + cells.get(1).asText());
+            } else if (cellLabel.equals("Assessed Value:")) {
+                auctionListing.setAssessedValue(Float.parseFloat(cells.get(1).asText().replace("$", "").replace(",", "")));
+            }
+        }
+        return auctionListing;
     }
 
     private void selectMonth(HtmlSelect monthSelector, List<HtmlOption> monthYearOptions, LocalDate date){
@@ -132,11 +183,11 @@ public class RealTaxDeedScraper implements TaxAuctionService{
         throw new UnsupportedOperationException("This page doesn't support that month/year combination");
     }
 
-    private void addButtonToFormAndSubmit(HtmlPage calendarPage, HtmlForm form) throws IOException {
+    private HtmlPage addButtonToFormAndSubmit(HtmlPage calendarPage, HtmlForm form) throws IOException {
         HtmlElement button = (HtmlElement) calendarPage.createElement("button");
         button.setAttribute("type", "submit");
         form.appendChild(button);
-        button.click();
+        return button.click();
     }
 
     private List<Auction> getAuctionsfromHtmlElements(List<HtmlElement> taxAuctionDates, AuctionType auctionType, County county){
@@ -154,6 +205,7 @@ public class RealTaxDeedScraper implements TaxAuctionService{
 
     private WebClient getRealTaxDeedWebClient(boolean useLogging){
         final WebClient webClient = new WebClient(browserVersion);
+//        webClient.waitForBackgroundJavaScript(10000);
         webClient.setWebConnection(new FalsifyingWebConnection(webClient) {
             @Override
             public WebResponse getResponse(WebRequest webRequest) throws IOException {
@@ -164,11 +216,18 @@ public class RealTaxDeedScraper implements TaxAuctionService{
                 return super.getResponse(webRequest);
             }
         });
-        webClient.setAjaxController(new NicelyResynchronizingAjaxController());
+//        webClient.setAjaxController(new NicelyResynchronizingAjaxController());
+        webClient.setAjaxController(new AjaxController(){
+            @Override
+            public boolean processSynchron(HtmlPage page, WebRequest request, boolean async){
+                return true;
+            }
+        });
         if(!useLogging) {
             LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
             java.util.logging.Logger.getLogger("com.gargoylesoftware.htmlunit").setLevel(Level.OFF);
             java.util.logging.Logger.getLogger("org.apache.commons.httpclient").setLevel(Level.OFF);
+
             webClient.setIncorrectnessListener(new IncorrectnessListener() {
                 @Override
                 public void notify(String arg0, Object arg1) {

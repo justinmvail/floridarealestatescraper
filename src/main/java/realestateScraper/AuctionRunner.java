@@ -14,6 +14,7 @@ import java.util.List;
 
 public class AuctionRunner {
     public static void main( String[] args ) throws IOException, InterruptedException {
+        String exportFileLocation = args[0];
         List<Auction> allAuctions = new ArrayList<>();
         TaxAuctionService taxAuctionService = new RealTaxDeedScraper(false);
         County[] allCounties = County.class.getEnumConstants();
@@ -25,7 +26,7 @@ public class AuctionRunner {
         }
 
         for(Auction auction : allAuctions){
-            System.out.print("Getting listings for "+auction.getCounty().getCountyName()+" auction on "+auction.getDate()+"... ");
+            System.out.print("Getting listings for "+auction.getCounty().getCountyName()+" auction on "+auction.getDate()+"...   ");
             List<AuctionListing> auctionListings = taxAuctionService.getAuctionListings(auction);
             auction.setAuctionListings(auctionListings);
             System.out.println("complete");
@@ -34,6 +35,6 @@ public class AuctionRunner {
         //Update TimeZones and save.
         AuctionTimeUpdater.updateAuctionTimesByTimeZone(allAuctions, TimeZone.ET);
         FileExporter fileExporter = new GoogleCalendarCSVExporter();
-        fileExporter.export(args[0], allAuctions);
+        fileExporter.export(exportFileLocation, allAuctions);
     }
 }

@@ -14,8 +14,7 @@ import java.util.List;
 public class ListingRunner {
     public static void main( String[] args ) throws IOException, InterruptedException {
         TaxAuctionService taxAuctionService = new RealTaxDeedScraper(false);
-        List<Auction> auctionList = taxAuctionService.getAllAuctionDatesByMonth(AuctionType.TAXDEED, County.MIAMI_DADE, LocalDate.parse("2018-08-01"));
-        Auction auction = auctionList.get(0);
+        Auction auction = taxAuctionService.getAuctionByDate(AuctionType.TAXDEED, County.BAY, LocalDate.parse("2018-08-07"));
         List<AuctionListing> auctionListings = taxAuctionService.getAuctionListings(auction);
         auction.setAuctionListings(auctionListings);
         System.out.println("end");

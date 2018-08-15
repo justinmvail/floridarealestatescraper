@@ -16,7 +16,7 @@ public interface TaxAuctionService {
 
     List<Auction> getAllAuctionDatesByWeek(AuctionType auctionType, County county, LocalDate startingDate) throws IOException, InterruptedException;
 
-    List<Auction> getAllAuctionDatesByDay(AuctionType auctionType, County county, LocalDate startingDate);
+    Auction getAuctionByDate(AuctionType auctionType, County county, LocalDate date) throws IOException, InterruptedException;
 
     List<Auction> getAllAuctionDatesForRange(AuctionType auctionType, County county, LocalDate inclusiveStartingDate, LocalDate exclusiveEndingDate);
 
