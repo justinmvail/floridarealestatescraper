@@ -89,6 +89,7 @@ public class RealTaxDeedScraper implements TaxAuctionService{
         List<HtmlDivision> auctionListingDivs = upcomingListingsDivision.getByXPath("//div[contains(@class, 'AUCTION_DETAILS')]");
         List<AuctionListing> listings = new ArrayList<>();
         for(HtmlDivision div : auctionListingDivs){
+            if(div.getFirstChild()==null || div.getFirstChild().getFirstChild()==null || div.getFirstChild().getFirstChild().getChildNodes()==null) continue;
             DomNodeList<DomNode> domNodeList = div.getFirstChild().getFirstChild().getChildNodes();
             AuctionListing auctionListing = new AuctionListing();
             for(DomNode domNode : domNodeList){

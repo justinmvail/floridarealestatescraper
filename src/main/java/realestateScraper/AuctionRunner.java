@@ -1,9 +1,6 @@
 package realestateScraper;
 
-import realestateScraper.DomainObjects.Auction;
-import realestateScraper.DomainObjects.AuctionType;
-import realestateScraper.DomainObjects.County;
-import realestateScraper.DomainObjects.TimeZone;
+import realestateScraper.DomainObjects.*;
 import realestateScraper.export.FileExporter;
 import realestateScraper.export.GoogleCalendarCSVExporter;
 import realestateScraper.services.RealTaxDeedScraper;
@@ -21,15 +18,21 @@ public class AuctionRunner {
         TaxAuctionService taxAuctionService = new RealTaxDeedScraper(false);
         County[] allCounties = County.class.getEnumConstants();
         for(County county : allCounties){
-            System.out.print(county.getCountyName()+" has started...   ");
+            System.out.print("Getting Auctions for "+county.getCountyName()+"...   ");
             List<Auction> auctionList = taxAuctionService.getAllAuctionDatesByMonth(AuctionType.TAXDEED, county, LocalDate.parse("2018-08-01"));
             allAuctions.addAll(auctionList);
             System.out.println("complete." );
         }
+
+        for(Auction auction : allAuctions){
+            System.out.print("Getting listings for "+auction.getCounty().getCountyName()+" auction on "+auction.getDate()+"... ");
+            List<AuctionListing> auctionListings = taxAuctionService.getAuctionListings(auction);
+            auction.setAuctionListings(auctionListings);
+            System.out.println("complete");
+        }
+
+        //Update TimeZones and save.
         AuctionTimeUpdater.updateAuctionTimesByTimeZone(allAuctions, TimeZone.ET);
-        Auction auction = allAuctions.get(0);
-
-
         FileExporter fileExporter = new GoogleCalendarCSVExporter();
         fileExporter.export(args[0], allAuctions);
     }

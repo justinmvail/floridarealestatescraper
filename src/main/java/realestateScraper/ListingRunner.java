@@ -17,6 +17,7 @@ public class ListingRunner {
         List<Auction> auctionList = taxAuctionService.getAllAuctionDatesByMonth(AuctionType.TAXDEED, County.MIAMI_DADE, LocalDate.parse("2018-08-01"));
         Auction auction = auctionList.get(0);
         List<AuctionListing> auctionListings = taxAuctionService.getAuctionListings(auction);
+        auction.setAuctionListings(auctionListings);
         System.out.println("end");
     }
 }
