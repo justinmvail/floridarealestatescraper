@@ -10,6 +10,7 @@ import realestateScraper.export.FileExporter;
 import realestateScraper.export.GoogleCalendarCSVExporter;
 import realestateScraper.services.MlsService;
 import realestateScraper.services.RealTaxDeedScraper;
+import realestateScraper.services.SearchEngineResultService;
 import realestateScraper.services.TaxAuctionService;
 import realestateScraper.services.ZillowScraper;
 import realestateScraper.translation.AuctionTimeUpdater;
@@ -110,6 +111,26 @@ abstract class AbstractParentTask {
                     MlsListing mlsListing = mlsService.getMlsListingForAuctionListing(auctionListing);
                     auctionListing.setMlsListing(mlsListing);
                     System.out.println("---Retrieved mls listings for " + auctionListing.getPropertyAddress());
+                    return null;
+                };
+                callableList.add(callableTask);
+            }
+        }
+        executor.invokeAll(callableList);
+        shutDownExecutor(executor, "MLS");
+    }
+
+    static void populateAllSearchEngineResults(List<Auction> auctions, SearchEngineResultService searchEngineResultService, int numberOfThreads) throws InterruptedException {
+        ExecutorService executor = Executors.newFixedThreadPool(numberOfThreads);
+        List<Callable<Object>> callableList = new ArrayList<>();
+        for(Auction auction : auctions){
+            if(auction.getAuctionListings()==null) continue;
+            for(AuctionListing auctionListing : auction.getAuctionListings()) {
+                Callable<Object> callableTask = () -> {
+                    System.out.println("Getting search engine results for " + auctionListing.getPropertyAddress() + "...   ");
+                    String serachEngineUrl = searchEngineResultService.getUrlForSearchResults(auctionListing.getPropertyAddress());
+                    auctionListing.setSearchEngineResultUrl(serachEngineUrl);
+                    System.out.println("---Retrieved search engine results for " + auctionListing.getPropertyAddress());
                     return null;
                 };
                 callableList.add(callableTask);

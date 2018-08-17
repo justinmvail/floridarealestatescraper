@@ -61,7 +61,7 @@ public class ZillowScraper extends HtmlUnitScraper implements MlsService {
     }
 
     private WebClient getZillowWebClient(boolean useLogging){
-        final WebClient webClient = new WebClient(BrowserVersion.BEST_SUPPORTED);
+        final WebClient webClient = new WebClient(BrowserVersion.CHROME);
         webClient.getOptions().setThrowExceptionOnScriptError(false);
         setScraperLogging(webClient, useLogging);
         return webClient;

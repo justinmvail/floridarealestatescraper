@@ -2,7 +2,7 @@ package realestateScraper.DomainObjects;
 
 import realestateScraper.Constants.AuctionType;
 
-public class    AuctionListing {
+public class AuctionListing {
     private AuctionType auctionType;
     private String caseNumber;
     private String certificateNumber;
@@ -11,6 +11,7 @@ public class    AuctionListing {
     private String propertyAddress;
     private float assessedValue;
     private MlsListing mlsListing;
+    private String searchEngineResultUrl;
 
     public AuctionListing(AuctionType auctionType, String caseNumber, String certificateNumber, float openingBid, String parcelID, String propertyAddress, float assessedValue) {
         this.auctionType = auctionType;
@@ -86,5 +87,13 @@ public class    AuctionListing {
 
     public void setMlsListing(MlsListing mlsListing) {
         this.mlsListing = mlsListing;
+    }
+
+    public String getSearchEngineResultUrl() {
+        return searchEngineResultUrl;
+    }
+
+    public void setSearchEngineResultUrl(String searchEngineResultUrl) {
+        this.searchEngineResultUrl = searchEngineResultUrl;
     }
 }

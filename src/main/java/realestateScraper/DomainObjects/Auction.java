@@ -23,15 +23,6 @@ public class Auction {
         this.strUrl = strUrl;
     }
 
-    public Auction(AuctionType auctionType, County county, LocalDate date, LocalTime time, String strUrl, List<AuctionListing> auctionListings) {
-        this.auctionType = auctionType;
-        this.county = county;
-        this.date = date;
-        this.time = time;
-        this.strUrl = strUrl;
-        this.auctionListings = auctionListings;
-    }
-
     public AuctionType getAuctionType() {
         return auctionType;
     }
@@ -49,10 +40,6 @@ public class Auction {
     }
 
     public String getUrl() {
-        return strUrl;
-    }
-
-    public String getStrUrl() {
         return strUrl;
     }
 
