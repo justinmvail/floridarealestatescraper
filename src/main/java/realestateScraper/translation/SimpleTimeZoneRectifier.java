@@ -1,11 +1,11 @@
 package realestateScraper.translation;
 
-import realestateScraper.DomainObjects.County;
-import realestateScraper.DomainObjects.TimeZone;
+import realestateScraper.Constants.County;
+import realestateScraper.Constants.TimeZone;
 
 import java.time.LocalTime;
 
-public class SimpleTimeZoneRectifier {
+class SimpleTimeZoneRectifier {
 
     public static LocalTime rectifyTimeZone(LocalTime time, County county, TimeZone desirdedTimeZone){
         byte originalTimeZoneValue = (byte)county.getTimeZone().getValue();

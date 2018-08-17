@@ -1,4 +1,4 @@
-package realestateScraper.DomainObjects;
+package realestateScraper.Constants;
 
 public enum AuctionType {
     TAXDEED("Tax Deed"),

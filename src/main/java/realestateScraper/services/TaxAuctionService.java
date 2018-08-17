@@ -2,8 +2,8 @@ package realestateScraper.services;
 
 import realestateScraper.DomainObjects.Auction;
 import realestateScraper.DomainObjects.AuctionListing;
-import realestateScraper.DomainObjects.AuctionType;
-import realestateScraper.DomainObjects.County;
+import realestateScraper.Constants.AuctionType;
+import realestateScraper.Constants.County;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -12,7 +12,7 @@ import java.util.List;
 public interface TaxAuctionService {
 
 
-    List<Auction> getAllAuctionDatesByMonth(AuctionType auctionType, County county, LocalDate startingDate) throws IOException, InterruptedException;
+    List<Auction> getAllAuctionDatesByMonth(AuctionType auctionType, County county, LocalDate startingDate) throws IOException;
 
     List<Auction> getAllAuctionDatesByWeek(AuctionType auctionType, County county, LocalDate startingDate) throws IOException, InterruptedException;
 

@@ -2,8 +2,8 @@ package realestateScraper.translation;
 
 import org.junit.Assert;
 import org.junit.Test;
-import realestateScraper.DomainObjects.County;
-import realestateScraper.DomainObjects.TimeZone;
+import realestateScraper.Constants.County;
+import realestateScraper.Constants.TimeZone;
 
 import java.time.LocalTime;
 

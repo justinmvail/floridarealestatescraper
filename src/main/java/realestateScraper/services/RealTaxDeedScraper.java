@@ -1,8 +1,5 @@
 package realestateScraper.services;
 
-import com.gargoylesoftware.css.parser.CSSErrorHandler;
-import com.gargoylesoftware.css.parser.CSSException;
-import com.gargoylesoftware.css.parser.CSSParseException;
 import com.gargoylesoftware.htmlunit.AjaxController;
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.WebClient;
@@ -12,11 +9,10 @@ import com.gargoylesoftware.htmlunit.html.*;
 import com.gargoylesoftware.htmlunit.util.FalsifyingWebConnection;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.LogFactory;
 import realestateScraper.DomainObjects.Auction;
 import realestateScraper.DomainObjects.AuctionListing;
-import realestateScraper.DomainObjects.AuctionType;
-import realestateScraper.DomainObjects.County;
+import realestateScraper.Constants.AuctionType;
+import realestateScraper.Constants.County;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,11 +21,9 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 
-public class RealTaxDeedScraper implements TaxAuctionService{
+public class RealTaxDeedScraper extends HtmlUnitScraper implements TaxAuctionService{
 
-    private final BrowserVersion browserVersion = BrowserVersion.CHROME;
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a");
     private final boolean useFrameworkLogging;
@@ -39,7 +33,7 @@ public class RealTaxDeedScraper implements TaxAuctionService{
     }
 
     @Override
-    public List<Auction> getAllAuctionDatesByMonth(AuctionType auctionType, County county, LocalDate startingDate) throws IOException, InterruptedException {
+    public List<Auction> getAllAuctionDatesByMonth(AuctionType auctionType, County county, LocalDate startingDate) throws IOException {
         WebClient webClient = getRealTaxDeedWebClient(useFrameworkLogging);
         String calendarUrlAppension = "/index.cfm?zaction=USER&zmethod=CALENDAR";
         HtmlPage calendarPage = webClient.getPage(county.getUrl()+ calendarUrlAppension);
@@ -152,22 +146,31 @@ public class RealTaxDeedScraper implements TaxAuctionService{
             HtmlTableRow htmlTableRow = (HtmlTableRow) domNode;
             List<HtmlTableCell> cells = htmlTableRow.getCells();
             String cellLabel = cells.get(0).asText();
-            if (cellLabel.equals("Auction Type:")) {
-                auctionListing.setAuctionType(AuctionType.valueOf(cells.get(1).asText().replace(" ", "")));
-            } else if (cellLabel.equals("Case #:")) {
-                auctionListing.setCaseNumber(cells.get(1).asText());
-            } else if (cellLabel.equals("Certificate #:")) {
-                auctionListing.setCertificateNumber(cells.get(1).asText());
-            } else if (cellLabel.equals("Opening Bid:")) {
-                auctionListing.setOpeningBid(Float.parseFloat(cells.get(1).asText().replace("$", "").replace(",", "")));
-            } else if (cellLabel.equals("Parcel ID:")) {
-                auctionListing.setParcelID(cells.get(1).asText());
-            } else if (cellLabel.equals("Property Address:")) {
-                auctionListing.setPropertyAddress(cells.get(1).asText());
-            } else if (cellLabel.equals("")) {
-                auctionListing.setPropertyAddress(auctionListing.getPropertyAddress() + " " + cells.get(1).asText());
-            } else if (cellLabel.equals("Assessed Value:")) {
-                auctionListing.setAssessedValue(Float.parseFloat(cells.get(1).asText().replace("$", "").replace(",", "")));
+            switch (cellLabel) {
+                case "Auction Type:":
+                    auctionListing.setAuctionType(AuctionType.valueOf(cells.get(1).asText().replace(" ", "")));
+                    break;
+                case "Case #:":
+                    auctionListing.setCaseNumber(cells.get(1).asText());
+                    break;
+                case "Certificate #:":
+                    auctionListing.setCertificateNumber(cells.get(1).asText());
+                    break;
+                case "Opening Bid:":
+                    auctionListing.setOpeningBid(Float.parseFloat(cells.get(1).asText().replace("$", "").replace(",", "")));
+                    break;
+                case "Parcel ID:":
+                    auctionListing.setParcelID(cells.get(1).asText());
+                    break;
+                case "Property Address:":
+                    auctionListing.setPropertyAddress(cells.get(1).asText());
+                    break;
+                case "":
+                    auctionListing.setPropertyAddress(auctionListing.getPropertyAddress() + " " + cells.get(1).asText());
+                    break;
+                case "Assessed Value:":
+                    auctionListing.setAssessedValue(Float.parseFloat(cells.get(1).asText().replace("$", "").replace(",", "")));
+                    break;
             }
         }
         return auctionListing;
@@ -207,7 +210,7 @@ public class RealTaxDeedScraper implements TaxAuctionService{
     }
 
     private WebClient getRealTaxDeedWebClient(boolean useLogging){
-        final WebClient webClient = new WebClient(browserVersion);
+        final WebClient webClient = new WebClient(BrowserVersion.CHROME);
         webClient.setWebConnection(new FalsifyingWebConnection(webClient) {
             @Override
             public WebResponse getResponse(WebRequest webRequest) throws IOException {
@@ -226,29 +229,7 @@ public class RealTaxDeedScraper implements TaxAuctionService{
                 return true;
             }
         });
-        if(!useLogging) {
-            LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
-            java.util.logging.Logger.getLogger("com.gargoylesoftware.htmlunit").setLevel(Level.OFF);
-            java.util.logging.Logger.getLogger("org.apache.commons.httpclient").setLevel(Level.OFF);
-
-            webClient.setIncorrectnessListener((arg0, arg1) -> {
-                // intentionally left blank to override default functionality with nothing
-            });
-            webClient.setCssErrorHandler(new CSSErrorHandler() {
-                @Override
-                public void warning(CSSParseException exception) throws CSSException {
-                    // intentionally left blank to override default functionality with nothing
-                }
-                @Override
-                public void fatalError(CSSParseException exception) throws CSSException {
-                    // intentionally left blank to override default functionality with nothing
-                }
-                @Override
-                public void error(CSSParseException exception) throws CSSException {
-                    // intentionally left blank to override default functionality with nothing
-                }
-            });
-        }
+        setScraperLogging(webClient, useLogging);
         return webClient;
     }
 }

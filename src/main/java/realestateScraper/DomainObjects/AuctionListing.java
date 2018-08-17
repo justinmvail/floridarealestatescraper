@@ -1,6 +1,6 @@
 package realestateScraper.DomainObjects;
 
-import java.math.BigInteger;
+import realestateScraper.Constants.AuctionType;
 
 public class    AuctionListing {
     private AuctionType auctionType;
@@ -10,6 +10,7 @@ public class    AuctionListing {
     private String parcelID;
     private String propertyAddress;
     private float assessedValue;
+    private MlsListing mlsListing;
 
     public AuctionListing(AuctionType auctionType, String caseNumber, String certificateNumber, float openingBid, String parcelID, String propertyAddress, float assessedValue) {
         this.auctionType = auctionType;
@@ -77,5 +78,13 @@ public class    AuctionListing {
 
     public void setAssessedValue(float assessedValue) {
         this.assessedValue = assessedValue;
+    }
+
+    public MlsListing getMlsListing() {
+        return mlsListing;
+    }
+
+    public void setMlsListing(MlsListing mlsListing) {
+        this.mlsListing = mlsListing;
     }
 }

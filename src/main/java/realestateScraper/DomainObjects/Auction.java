@@ -1,8 +1,10 @@
 package realestateScraper.DomainObjects;
 
+import realestateScraper.Constants.AuctionType;
+import realestateScraper.Constants.County;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.List;
 
 public class Auction {
@@ -11,7 +13,7 @@ public class Auction {
     private final LocalDate date;
     private final LocalTime time;
     private final String strUrl;
-    List<AuctionListing> auctionListings;
+    private List<AuctionListing> auctionListings;
 
     public Auction(AuctionType auctionType, County county, LocalDate date, LocalTime time, String strUrl) {
         this.auctionType = auctionType;

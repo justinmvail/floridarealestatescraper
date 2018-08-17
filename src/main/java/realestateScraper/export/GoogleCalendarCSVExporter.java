@@ -3,14 +3,11 @@ package realestateScraper.export;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import realestateScraper.DomainObjects.Auction;
-import realestateScraper.translation.SimpleTimeZoneRectifier;
-import realestateScraper.DomainObjects.TimeZone;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.LocalTime;
 import java.util.List;
 
 public class GoogleCalendarCSVExporter implements FileExporter {
