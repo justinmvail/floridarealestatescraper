@@ -9,8 +9,8 @@ import com.gargoylesoftware.htmlunit.html.HtmlInput;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlSpan;
 import org.apache.commons.lang3.StringUtils;
-import realestateScraper.DomainObjects.AuctionListing;
-import realestateScraper.DomainObjects.MlsListing;
+import realestateScraper.objects.AuctionListing;
+import realestateScraper.objects.MlsListing;
 
 import java.io.IOException;
 import java.util.List;

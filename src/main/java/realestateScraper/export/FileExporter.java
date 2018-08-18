@@ -1,6 +1,6 @@
 package realestateScraper.export;
 
-import realestateScraper.DomainObjects.Auction;
+import realestateScraper.objects.Auction;
 
 import java.io.IOException;
 import java.util.List;

@@ -1,6 +1,6 @@
-package realestateScraper.DomainObjects;
+package realestateScraper.objects;
 
-import realestateScraper.Constants.AuctionType;
+import realestateScraper.constants.AuctionType;
 
 public class AuctionListing {
     private AuctionType auctionType;

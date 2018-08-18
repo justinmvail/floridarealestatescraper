@@ -9,10 +9,10 @@ import com.gargoylesoftware.htmlunit.html.*;
 import com.gargoylesoftware.htmlunit.util.FalsifyingWebConnection;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import realestateScraper.DomainObjects.Auction;
-import realestateScraper.DomainObjects.AuctionListing;
-import realestateScraper.Constants.AuctionType;
-import realestateScraper.Constants.County;
+import realestateScraper.objects.Auction;
+import realestateScraper.objects.AuctionListing;
+import realestateScraper.constants.AuctionType;
+import realestateScraper.constants.County;
 
 import java.io.File;
 import java.io.IOException;

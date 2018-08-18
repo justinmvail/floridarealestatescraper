@@ -1,7 +1,7 @@
 package realestateScraper.translation;
 
-import realestateScraper.Constants.County;
-import realestateScraper.Constants.TimeZone;
+import realestateScraper.constants.County;
+import realestateScraper.constants.TimeZone;
 
 import java.time.LocalTime;
 

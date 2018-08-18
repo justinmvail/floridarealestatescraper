@@ -1,7 +1,7 @@
-package realestateScraper.DomainObjects;
+package realestateScraper.objects;
 
-import realestateScraper.Constants.AuctionType;
-import realestateScraper.Constants.County;
+import realestateScraper.constants.AuctionType;
+import realestateScraper.constants.County;
 
 import java.time.LocalDate;
 import java.time.LocalTime;

@@ -1,4 +1,4 @@
-package realestateScraper.DomainObjects;
+package realestateScraper.objects;
 
 public class MlsListing {
     private String url;

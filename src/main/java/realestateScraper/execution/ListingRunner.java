@@ -1,10 +1,10 @@
-package realestateScraper;
+package realestateScraper.execution;
 
-import realestateScraper.DomainObjects.Auction;
-import realestateScraper.DomainObjects.AuctionListing;
-import realestateScraper.Constants.AuctionType;
-import realestateScraper.Constants.County;
-import realestateScraper.DomainObjects.MlsListing;
+import realestateScraper.objects.Auction;
+import realestateScraper.objects.AuctionListing;
+import realestateScraper.constants.AuctionType;
+import realestateScraper.constants.County;
+import realestateScraper.objects.MlsListing;
 import realestateScraper.services.MlsService;
 import realestateScraper.services.RealTaxDeedScraper;
 import realestateScraper.services.TaxAuctionService;

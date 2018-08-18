@@ -1,4 +1,4 @@
-package realestateScraper.Constants;
+package realestateScraper.constants;
 
 public enum County {
     BAY("Bay County", "http://bay.realtaxdeed.com", TimeZone.CT),

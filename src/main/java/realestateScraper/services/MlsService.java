@@ -1,7 +1,7 @@
 package realestateScraper.services;
 
-import realestateScraper.DomainObjects.AuctionListing;
-import realestateScraper.DomainObjects.MlsListing;
+import realestateScraper.objects.AuctionListing;
+import realestateScraper.objects.MlsListing;
 
 import java.io.IOException;
 

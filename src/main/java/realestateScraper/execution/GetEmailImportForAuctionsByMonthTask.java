@@ -1,8 +1,8 @@
-package realestateScraper;
+package realestateScraper.execution;
 
-import realestateScraper.Constants.County;
-import realestateScraper.Constants.TimeZone;
-import realestateScraper.DomainObjects.Auction;
+import realestateScraper.constants.County;
+import realestateScraper.constants.TimeZone;
+import realestateScraper.objects.Auction;
 import realestateScraper.export.FileExporter;
 import realestateScraper.export.GoogleCalendarCSVExporter;
 import realestateScraper.services.RealTaxDeedScraper;

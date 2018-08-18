@@ -1,4 +1,4 @@
-package realestateScraper.Constants;
+package realestateScraper.constants;
 
 public enum TimeZone {
     ET("ET", "Eastern Time", (byte)0),

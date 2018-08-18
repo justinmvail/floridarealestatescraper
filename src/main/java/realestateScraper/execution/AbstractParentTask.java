@@ -1,21 +1,14 @@
-package realestateScraper;
+package realestateScraper.execution;
 
-import realestateScraper.Constants.AuctionType;
-import realestateScraper.Constants.County;
-import realestateScraper.Constants.TimeZone;
-import realestateScraper.DomainObjects.Auction;
-import realestateScraper.DomainObjects.AuctionListing;
-import realestateScraper.DomainObjects.MlsListing;
-import realestateScraper.export.FileExporter;
-import realestateScraper.export.GoogleCalendarCSVExporter;
+import realestateScraper.constants.AuctionType;
+import realestateScraper.constants.County;
+import realestateScraper.objects.Auction;
+import realestateScraper.objects.AuctionListing;
+import realestateScraper.objects.MlsListing;
 import realestateScraper.services.MlsService;
-import realestateScraper.services.RealTaxDeedScraper;
 import realestateScraper.services.SearchEngineResultService;
 import realestateScraper.services.TaxAuctionService;
-import realestateScraper.services.ZillowScraper;
-import realestateScraper.translation.AuctionTimeUpdater;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;

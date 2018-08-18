@@ -1,9 +1,9 @@
 package realestateScraper.services;
 
-import realestateScraper.DomainObjects.Auction;
-import realestateScraper.DomainObjects.AuctionListing;
-import realestateScraper.Constants.AuctionType;
-import realestateScraper.Constants.County;
+import realestateScraper.objects.Auction;
+import realestateScraper.objects.AuctionListing;
+import realestateScraper.constants.AuctionType;
+import realestateScraper.constants.County;
 
 import java.io.IOException;
 import java.time.LocalDate;

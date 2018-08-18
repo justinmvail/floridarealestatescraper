@@ -1,7 +1,7 @@
 package realestateScraper.translation;
 
-import realestateScraper.DomainObjects.Auction;
-import realestateScraper.Constants.TimeZone;
+import realestateScraper.objects.Auction;
+import realestateScraper.constants.TimeZone;
 
 import java.util.List;
 
