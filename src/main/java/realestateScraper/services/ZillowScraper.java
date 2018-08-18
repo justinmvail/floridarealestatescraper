@@ -53,9 +53,9 @@ public class ZillowScraper extends HtmlUnitScraper implements MlsService {
         String strZestimatePrice = zestimateSpan.getNextSibling().getNextSibling().asText();
         strZestimatePrice = strZestimatePrice.replace("$","");
         strZestimatePrice = strZestimatePrice.replace(",","");
-        float zestimate;
+        Float zestimate;
         if(StringUtils.isNumeric(strZestimatePrice)) zestimate = Float.parseFloat(strZestimatePrice);
-        else zestimate = 0;
+        else zestimate = null;
         String mlsUrl = resultsPage.getUrl().toString();
         return new MlsListing(mlsUrl, zestimate);
     }

@@ -6,18 +6,19 @@ public class AuctionListing {
     private AuctionType auctionType;
     private String caseNumber;
     private String certificateNumber;
-    private float openingBid;
+    private Float openingBid;
     private String parcelID;
     private String propertyAddress;
-    private float assessedValue;
+    private Float assessedValue;
     private MlsListing mlsListing;
     private String searchEngineResultUrl;
 
-    public AuctionListing(AuctionType auctionType, String caseNumber, String certificateNumber, float openingBid, String parcelID, String propertyAddress, float assessedValue) {
+    public AuctionListing(AuctionType auctionType, String caseNumber, String certificateNumber, Float openingBid, String parcelID, String propertyAddress, float assessedValue) {
         this.auctionType = auctionType;
         this.caseNumber = caseNumber;
         this.certificateNumber = certificateNumber;
         this.openingBid = openingBid;
+        this.parcelID = parcelID;
         this.parcelID = parcelID;
         this.propertyAddress = propertyAddress;
         this.assessedValue = assessedValue;
@@ -49,11 +50,11 @@ public class AuctionListing {
         this.certificateNumber = certificateNumber;
     }
 
-    public float getOpeningBid() {
+    public Float getOpeningBid() {
         return openingBid;
     }
 
-    public void setOpeningBid(float openingBid) {
+    public void setOpeningBid(Float openingBid) {
         this.openingBid = openingBid;
     }
 
@@ -73,11 +74,11 @@ public class AuctionListing {
         this.propertyAddress = propertyAddress;
     }
 
-    public float getAssessedValue() {
+    public Float getAssessedValue() {
         return assessedValue;
     }
 
-    public void setAssessedValue(float assessedValue) {
+    public void setAssessedValue(Float assessedValue) {
         this.assessedValue = assessedValue;
     }
 

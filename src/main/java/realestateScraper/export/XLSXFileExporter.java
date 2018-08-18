@@ -1,6 +1,7 @@
 package realestateScraper.export;
 
 import org.apache.poi.common.usermodel.HyperlinkType;
+import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.CreationHelper;
@@ -9,6 +10,9 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFHyperlink;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -28,6 +32,16 @@ public class XLSXFileExporter implements FileExporter {
         FileOutputStream fileOutputStream = new FileOutputStream(file);
         XSSFWorkbook workbook = new XSSFWorkbook();
         CreationHelper createHelper = workbook.getCreationHelper();
+
+        XSSFCellStyle styleCurrencyFormat = workbook.createCellStyle();
+        styleCurrencyFormat.setDataFormat((short)8);//Accounting format
+
+        XSSFCellStyle hyperLinkStyle = workbook.createCellStyle();
+        XSSFFont hyperLinkFont = workbook.createFont();
+        hyperLinkFont.setUnderline(XSSFFont.U_SINGLE);
+        hyperLinkFont.setColor(HSSFColor.BLUE.index);
+        hyperLinkStyle.setFont(hyperLinkFont);
+
 
         for(Auction auction : auctionList){
             XSSFSheet sheet = workbook.createSheet(
@@ -58,16 +72,22 @@ public class XLSXFileExporter implements FileExporter {
                 row.createCell(1, CellType.STRING).setCellValue(auctionListing.getCertificateNumber());
                 row.createCell(2, CellType.STRING).setCellValue(auctionListing.getParcelID());
                 row.createCell(3, CellType.STRING).setCellValue(auctionListing.getPropertyAddress());
-                row.createCell(4, CellType.NUMERIC).setCellValue(auctionListing.getOpeningBid());
-                row.createCell(5, CellType.NUMERIC).setCellValue(auctionListing.getAssessedValue());
+                Cell openingBid = row.createCell(4, CellType.NUMERIC);
+                if (auctionListing.getOpeningBid()!=null) openingBid.setCellValue(auctionListing.getOpeningBid());
+                openingBid.setCellStyle(styleCurrencyFormat);
+                Cell assessedValue = row.createCell(5, CellType.NUMERIC);
+                if(auctionListing.getAssessedValue()!=null)assessedValue.setCellValue(auctionListing.getAssessedValue());
+                assessedValue.setCellStyle(styleCurrencyFormat);
                 if(auctionListing.getMlsListing()!=null) {
-                    row.createCell(6, CellType.NUMERIC).setCellValue(auctionListing.getMlsListing().getPriceEstimate());
+                    Cell mlsEstimate = row.createCell(6, CellType.NUMERIC);
+                    if(auctionListing.getMlsListing().getPriceEstimate()!=null)mlsEstimate.setCellValue(auctionListing.getMlsListing().getPriceEstimate());
+                    mlsEstimate.setCellStyle(styleCurrencyFormat);
                     if(auctionListing.getMlsListing().getUrl()!=null) {
                         Cell mlsUrlCell = row.createCell(7, CellType.STRING);
                         //TODO: should not be hardcoded to Google
                         mlsUrlCell.setCellValue("Zillow");
                         createCellHyperLink(mlsUrlCell, auctionListing.getMlsListing().getUrl(), createHelper);
-
+                        mlsUrlCell.setCellStyle(hyperLinkStyle);
                     }
                 }
                 if(auctionListing.getSearchEngineResultUrl()!=null) {
@@ -75,6 +95,7 @@ public class XLSXFileExporter implements FileExporter {
                     //TODO: should not be hardcoded to Google
                     searchEngineUrlCell.setCellValue("Google");
                     createCellHyperLink(searchEngineUrlCell, auctionListing.getSearchEngineResultUrl(), createHelper);
+                    searchEngineUrlCell.setCellStyle(hyperLinkStyle);
                 }
             }
         }

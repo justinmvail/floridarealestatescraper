@@ -2,9 +2,9 @@ package realestateScraper.objects;
 
 public class MlsListing {
     private String url;
-    private float priceEstimate;
+    private Float priceEstimate;
 
-    public MlsListing(String url, float priceEstimate) {
+    public MlsListing(String url, Float priceEstimate) {
         this.url = url;
         this.priceEstimate = priceEstimate;
     }
@@ -17,11 +17,11 @@ public class MlsListing {
         this.url = url;
     }
 
-    public float getPriceEstimate() {
+    public Float getPriceEstimate() {
         return priceEstimate;
     }
 
-    public void setPriceEstimate(float priceEstimate) {
+    public void setPriceEstimate(Float priceEstimate) {
         this.priceEstimate = priceEstimate;
     }
 }
