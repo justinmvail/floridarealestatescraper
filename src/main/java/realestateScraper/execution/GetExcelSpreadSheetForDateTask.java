@@ -15,7 +15,6 @@ import realestateScraper.translation.AuctionTimeUpdater;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -38,12 +37,13 @@ public class GetExcelSpreadSheetForDateTask extends AbstractParentTask {
         List<Auction> auctions = getAllAuctionsByDate(allCounties, LocalDate.parse(strDate), taxAuctionService, numberOfThreads);
         populateAllAuctionListings(auctions, taxAuctionService, numberOfThreads);
         AuctionTimeUpdater.updateAuctionTimesForTimeZone(auctions, TimeZone.ET);
-        //We only want to use 2 threads for Zillow.  They get mad with higher load.
+        //We only want to use 2 threads for Zillow.  They get mad at robots.
         populateAllMlsListings(auctions, mlsService, 2);
         populateAllSearchEngineResults(auctions, searchEngineResultService, numberOfThreads);
         auctions.sort(Comparator.comparing(Auction::getTime));
+        auctions.removeIf(auction -> auction.getAuctionListings()==null);
         auctions.forEach(auction -> auction.getAuctionListings().sort(Comparator.comparing(AuctionListing::getAssessedValue)));
-        fileExporter.export(exportPath+"Auctions-"+strDate+".xlsx", auctions);
+        fileExporter.export(exportPath+strDate+".xlsx", auctions);
         stopTiming();
         System.out.println("Good Bye.");
     }
