@@ -40,8 +40,8 @@ public class GetExcelSpreadSheetForDateTask extends AbstractParentTask {
         //We only want to use 2 threads for Zillow.  They get mad at robots.
         populateAllMlsListings(auctions, mlsService, 2);
         populateAllSearchEngineResults(auctions, searchEngineResultService, numberOfThreads);
-        auctions.sort(Comparator.comparing(Auction::getTime));
         auctions.removeIf(auction -> auction.getAuctionListings()==null);
+        auctions.sort(Comparator.comparing(Auction::getTime));
         auctions.forEach(auction -> auction.getAuctionListings().sort(Comparator.comparing(AuctionListing::getAssessedValue)));
         fileExporter.export(exportPath+strDate+".xlsx", auctions);
         stopTiming();
