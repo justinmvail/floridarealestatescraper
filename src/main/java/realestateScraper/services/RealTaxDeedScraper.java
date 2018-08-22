@@ -162,6 +162,7 @@ public class RealTaxDeedScraper extends HtmlUnitScraper implements TaxAuctionSer
                     break;
                 case "Parcel ID:":
                     auctionListing.setParcelID(cells.get(1).asText());
+                    auctionListing.setParcelUrl(cells.get(1).getFirstChild().getNextSibling().getAttributes().getNamedItem("href").getNodeValue());
                     break;
                 case "Property Address:":
                     auctionListing.setPropertyAddress(cells.get(1).asText());

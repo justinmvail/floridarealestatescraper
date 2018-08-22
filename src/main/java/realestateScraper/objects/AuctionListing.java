@@ -10,6 +10,7 @@ public class AuctionListing {
     private String parcelID;
     private String propertyAddress;
     private Float assessedValue;
+    private String parcelUrl;
     private MlsListing mlsListing;
     private String searchEngineResultUrl;
 
@@ -80,6 +81,14 @@ public class AuctionListing {
 
     public void setAssessedValue(Float assessedValue) {
         this.assessedValue = assessedValue;
+    }
+
+    public String getParcelUrl() {
+        return parcelUrl;
+    }
+
+    public void setParcelUrl(String parcelUrl) {
+        this.parcelUrl = parcelUrl;
     }
 
     public MlsListing getMlsListing() {

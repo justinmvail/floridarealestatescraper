@@ -52,6 +52,7 @@ public class XLSXFileExporter implements FileExporter {
             Cell auctionUrlCell = sheet.createRow(0).createCell(0);
             auctionUrlCell.setCellValue(auction.getUrl());
             createCellHyperLink(auctionUrlCell, auction.getUrl(), createHelper);
+            auctionUrlCell.setCellStyle(hyperLinkStyle);
 
             //Create table headers
             Row headerRow = sheet.createRow(2);
@@ -64,6 +65,7 @@ public class XLSXFileExporter implements FileExporter {
             headerRow.createCell(6, CellType.STRING).setCellValue("MLS Estimate");
             headerRow.createCell(7, CellType.STRING).setCellValue("MLS Link");
             headerRow.createCell(8, CellType.STRING).setCellValue("Search Engine");
+            headerRow.createCell(9, CellType.STRING).setCellValue("Parcel Link");
 
             int rowNumber = 3;
             for(AuctionListing auctionListing : auction.getAuctionListings()) {
@@ -95,6 +97,12 @@ public class XLSXFileExporter implements FileExporter {
                     //TODO: should not be hardcoded to Google
                     searchEngineUrlCell.setCellValue("Google");
                     createCellHyperLink(searchEngineUrlCell, auctionListing.getSearchEngineResultUrl(), createHelper);
+                    searchEngineUrlCell.setCellStyle(hyperLinkStyle);
+                }
+                if(auctionListing.getParcelUrl()!=null) {
+                    Cell searchEngineUrlCell = row.createCell(9, CellType.STRING);
+                    searchEngineUrlCell.setCellValue("Parcel Info");
+                    createCellHyperLink(searchEngineUrlCell, auctionListing.getParcelUrl(), createHelper);
                     searchEngineUrlCell.setCellStyle(hyperLinkStyle);
                 }
             }
