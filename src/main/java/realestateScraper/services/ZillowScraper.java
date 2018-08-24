@@ -25,11 +25,28 @@ public class ZillowScraper extends HtmlUnitScraper implements MlsService {
 
     @Override
     public MlsListing getMlsListingForAuctionListing(AuctionListing auctionListing) throws IOException {
-        if(auctionListing.getPropertyAddress()==null) return null;
-        if(auctionListing.getPropertyAddress().trim().equals("UNKNOWN")) return null;
+        if(isBadInput(auctionListing)) return null;
         WebClient webClient = getZillowWebClient(useFrameworkLogging);
         HtmlPage zillowHomePage = webClient.getPage("https://www.zillow.com");
+        hasZillowCaughtMe(zillowHomePage);
+        HtmlPage resultsPage = searchZillowFor(zillowHomePage, auctionListing);
+        return getMlsListing(resultsPage);
+    }
 
+    private boolean isBadInput(AuctionListing auctionListing){
+        if(auctionListing.getPropertyAddress()==null) return true;
+        if(auctionListing.getPropertyAddress().trim().equals("UNKNOWN")) return true;
+        return false;
+    }
+
+    private WebClient getZillowWebClient(boolean useLogging){
+        final WebClient webClient = new WebClient(BrowserVersion.CHROME);
+        webClient.getOptions().setThrowExceptionOnScriptError(false);
+        setScraperLogging(webClient, useLogging);
+        return webClient;
+    }
+
+    private void hasZillowCaughtMe(HtmlPage zillowHomePage){
         //If Zillow is prompting us for a captcha, we are screwed.
         List<HtmlDivision> errorDivs = zillowHomePage.getByXPath("//div[@class='error-text-content']");
         if (errorDivs.size()>0){
@@ -39,14 +56,19 @@ public class ZillowScraper extends HtmlUnitScraper implements MlsService {
                 throw new UnsupportedOperationException("Zillow caught me!!!");
             }
         }
+    }
 
+    private HtmlPage searchZillowFor(HtmlPage zillowHomePage, AuctionListing auctionListing) throws IOException {
         HtmlInput searchInput = (HtmlInput) zillowHomePage.getByXPath("//*[@id=\"citystatezip\"]").get(0);
         searchInput.setValueAttribute(auctionListing.getPropertyAddress());
         HtmlForm form = zillowHomePage.getFormByName("formSearchBar");
         HtmlElement button = (HtmlElement) zillowHomePage.createElement("button");
         button.setAttribute("type", "submit");
         form.appendChild(button);
-        HtmlPage resultsPage = button.click();
+        return button.click();
+    }
+
+    private MlsListing getMlsListing(HtmlPage resultsPage){
         List<HtmlSpan> spans = resultsPage.getByXPath("//span[@class='zsg-tooltip-launch zsg-tooltip-launch_keyword']");
         if(spans.size()<2) return null;
         HtmlSpan zestimateSpan = spans.get(1);
@@ -59,12 +81,4 @@ public class ZillowScraper extends HtmlUnitScraper implements MlsService {
         String mlsUrl = resultsPage.getUrl().toString();
         return new MlsListing(mlsUrl, zestimate);
     }
-
-    private WebClient getZillowWebClient(boolean useLogging){
-        final WebClient webClient = new WebClient(BrowserVersion.CHROME);
-        webClient.getOptions().setThrowExceptionOnScriptError(false);
-        setScraperLogging(webClient, useLogging);
-        return webClient;
-    }
-
 }

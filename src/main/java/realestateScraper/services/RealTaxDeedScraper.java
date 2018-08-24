@@ -134,7 +134,8 @@ public class RealTaxDeedScraper extends HtmlUnitScraper implements TaxAuctionSer
                     continue;
             }
             DomNodeList<DomNode> domNodeList = div.getFirstChild().getFirstChild().getChildNodes();
-            listings.add(scrapeSingleAuctionListing(domNodeList));
+            AuctionListing auctionListing = scrapeSingleAuctionListing(domNodeList);
+            if(auctionListing!=null) listings.add(scrapeSingleAuctionListing(domNodeList));
         }
         return listings;
     }
@@ -149,7 +150,10 @@ public class RealTaxDeedScraper extends HtmlUnitScraper implements TaxAuctionSer
             String cellLabel = cells.get(0).asText();
             switch (cellLabel) {
                 case "Auction Type:":
-                    auctionListing.setAuctionType(AuctionType.valueOf(cells.get(1).asText().replace(" ", "")));
+                    AuctionType auctionType = AuctionType.valueOf(cells.get(1).asText().replace(" ", ""));
+                    //TODO: remove hardcoded removal of ForeClosure auctions
+                    if(auctionType == AuctionType.FORECLOSURE) return null;
+                    auctionListing.setAuctionType(auctionType);
                     break;
                 case "Case #:":
                     auctionListing.setCaseNumber(cells.get(1).asText());
