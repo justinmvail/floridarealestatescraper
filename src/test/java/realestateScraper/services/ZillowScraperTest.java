@@ -22,7 +22,7 @@ public class ZillowScraperTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        assertTrue(mlsListing.getPriceEstimate().equals(107451f));
+        assertEquals((Float)107824f, mlsListing.getPriceEstimate());
     }
 
     @Test
@@ -36,6 +36,21 @@ public class ZillowScraperTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        assertEquals(mlsListing.getPriceEstimate(), (Float)190515f);
+        assertEquals((Float)190258f, mlsListing.getPriceEstimate());
     }
+
+    @Test
+    public void getMlsListingForAuctionListingWithBadString() throws Exception {
+        ZillowScraper zillowScraper = new ZillowScraper(false);
+        AuctionListing auctionListing = new AuctionListing();
+        auctionListing.setPropertyAddress("Completely wrong address format 1231");
+        MlsListing mlsListing = null;
+        try {
+            mlsListing = zillowScraper.getMlsListingForAuctionListing(auctionListing);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        assertNull(mlsListing);
+    }
+
 }

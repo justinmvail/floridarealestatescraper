@@ -11,7 +11,7 @@ public class Auction {
     private final AuctionType auctionType;
     private final County county;
     private final LocalDate date;
-    private final LocalTime time;
+    private LocalTime time;
     private final String strUrl;
     private List<AuctionListing> auctionListings;
 
@@ -37,6 +37,10 @@ public class Auction {
 
     public LocalTime getTime() {
         return time;
+    }
+
+    public void setTime(LocalTime time) {
+        this.time = time;
     }
 
     public String getUrl() {

@@ -69,16 +69,26 @@ public class ZillowScraper extends HtmlUnitScraper implements MlsService {
     }
 
     private MlsListing getMlsListing(HtmlPage resultsPage){
-        List<HtmlSpan> spans = resultsPage.getByXPath("//span[@class='zsg-tooltip-launch zsg-tooltip-launch_keyword']");
-        if(spans.size()<2) return null;
-        HtmlSpan zestimateSpan = spans.get(1);
-        String strZestimatePrice = zestimateSpan.getNextSibling().getNextSibling().asText();
-        strZestimatePrice = strZestimatePrice.replace("$","");
-        strZestimatePrice = strZestimatePrice.replace(",","");
-        Float zestimate;
-        if(StringUtils.isNumeric(strZestimatePrice)) zestimate = Float.parseFloat(strZestimatePrice);
-        else zestimate = null;
+        if (resultsPage.getTitleText().contains("Real Estate")) return null; //We didn't find a match.
+        //I have no idea why this happens.  Zillow has (at least) two distinct ways of constructing the DOM.  Mode
+        //1 and 2 are the rectify that.
+        List<HtmlSpan> modeOneSpans = resultsPage.getByXPath("//span[@class='zsg-tooltip-launch zsg-tooltip-launch_keyword']");
+        List<HtmlSpan> modeTwoSpans = resultsPage.getByXPath("//span[@class='zsg-tooltip-launch_keyword']");
         String mlsUrl = resultsPage.getUrl().toString();
+        Float zestimate = null;
+        if(modeOneSpans.size()>=2)zestimate = extractZestimate(modeOneSpans.get(1).getNextSibling().getNextSibling().asText());
+        if(modeTwoSpans.size()>=2 && zestimate==null) zestimate = extractZestimate(modeTwoSpans.get(1).getParentNode().getParentNode().asText().split(":")[1]);
         return new MlsListing(mlsUrl, zestimate);
+    }
+
+    private Float extractZestimate(String strZestimatePrice){
+        strZestimatePrice = strZestimatePrice
+                .trim()
+                .replace("$", "")
+                .replace(",", "");
+        Float zestimate;
+        if (StringUtils.isNumeric(strZestimatePrice)) zestimate = Float.parseFloat(strZestimatePrice);
+        else zestimate = null;
+        return zestimate;
     }
 }
