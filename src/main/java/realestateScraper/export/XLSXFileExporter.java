@@ -20,6 +20,9 @@ import realestateScraper.objects.AuctionListing;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
 
@@ -97,7 +100,7 @@ public class XLSXFileExporter implements FileExporter {
     }
 
     private void createAndPopulateHyperLinkCell(Row row, int index, String url, String displayValue){
-        if(url!=null){
+        if(url!=null && isUrlValid(url)){
             Cell hyperLinkCell = row.createCell(index, CellType.STRING);
             hyperLinkCell.setCellValue(displayValue);
             createCellHyperLink(hyperLinkCell, url, creationHelper);
@@ -105,10 +108,19 @@ public class XLSXFileExporter implements FileExporter {
         }
     }
 
+    private String generateSheetName(Auction auction){
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(auction.getCounty().getCountyName().replace(" County",""));
+        stringBuilder.append("-");
+        stringBuilder.append(auction.getTime().toString().replace(":",""));
+        stringBuilder.append("-");
+        stringBuilder.append(auction.getDate().toString().substring(5));
+        return stringBuilder.toString();
+    }
+
     private XSSFSheet setUpSheet(XSSFWorkbook workbook, Auction auction, CreationHelper creationHelper){
         XSSFSheet sheet = workbook.createSheet(
-                auction.getCounty().getCountyName().replace(" County","")
-                        + "-" + auction.getTime().toString().replace(":",""));
+                generateSheetName(auction));
         //TODO: Make the columnHeaders here
         sheet.addMergedRegion(new CellRangeAddress(0,0,0,25));
         Cell auctionUrlCell = sheet.createRow(0).createCell(0);
@@ -146,4 +158,20 @@ public class XLSXFileExporter implements FileExporter {
             }
         }
     }
+
+    private boolean isUrlValid(String strUrl){
+        URL url;
+        try {
+            url = new URL(strUrl);// this would check for the protocol
+            url.toURI();
+        } catch (MalformedURLException e) {
+            System.out.println(strUrl + " can't convert malformed url");
+            return false;
+        } catch (URISyntaxException e) {
+            System.out.println(strUrl + " can't convert url due to syntax");
+            return false;
+        }
+        return true;
+    }
 }
+
